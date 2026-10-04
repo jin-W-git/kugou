@@ -2042,3 +2042,72 @@
 .song-list-container::-webkit-scrollbar-thumb:hover {
   background: rgba(24, 144, 255, 0.5);
 }
+
+/* ===== 第三方登录（QQ / 微信） ===== */
+.login-third-party {
+  margin-top: 1.5rem;
+}
+
+.third-party-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.82rem;
+  margin-bottom: 1rem;
+}
+
+.third-party-divider::before,
+.third-party-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.third-party-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.third-party-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.third-party-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.third-party-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.qq-icon {
+  background: #12b7f5;
+}
+
+.wechat-icon {
+  background: #07c160;
+}

@@ -87,6 +87,32 @@ export const request = async (endpoint, options = {}) => {
 
 export const getSongUrl = (hash) => request(`/song/url?hash=${hash}&quality=320`);
 
+// ===== QQ 扫码登录 =====
+// 生成二维码：返回 { qrcode(base64), qrsig, ptqrtoken, pt_login_sig, pt_openlogin_data, xlogin_url, cookie }
+export const qqLoginCreate = () => request('/login/qq/qr/create');
+
+// 轮询扫码状态：传入 create 返回的全部字段
+// 返回：{ status:'wait' } 等待 | { status:'expired' } 失效 | { status:1, data:{ token,userid,... } } 成功
+export const qqLoginCheck = (params = {}) => {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') qs.append(k, String(v));
+  });
+  return request(`/login/qq/qr/check?${qs.toString()}`);
+};
+
+// ===== 微信扫码登录 =====
+// 生成二维码：返回 { errcode, uuid, appname, qrcode:{ qrcodebase64 } }
+export const wxLoginCreate = () => request('/login/wx/create');
+
+// 轮询扫码状态：微信确认授权后返回授权码 code
+export const wxLoginCheck = (uuid) =>
+  request(`/login/wx/check?uuid=${encodeURIComponent(uuid)}`);
+
+// 用微信授权码换取酷狗 token
+export const wxLoginOpenplat = (code) =>
+  request(`/login/openplat?code=${encodeURIComponent(code)}`);
+
 // 基于axios的文件下载功能
 export const downloadSong = async (hash, filename, onProgress) => {
   try {

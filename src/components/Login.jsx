@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import { useAuth } from '../contexts/AuthContext';
 import { request } from '../services/api';
+import QrLoginModal from './QrLoginModal';
 
 export default function Login() {
   
@@ -11,6 +12,7 @@ export default function Login() {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [qrMode, setQrMode] = useState(null); // null | 'qq' | 'wechat'
   const navigate = useNavigate();
   const { isAuthenticated, login } = useAuth();
 
@@ -67,6 +69,15 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 第三方扫码登录成功后统一处理：存入 auth + 跳转首页
+  const handleThirdLogin = async (authData) => {
+    if (!authData?.token || authData.userid === undefined) {
+      throw new Error('登录数据不完整');
+    }
+    await login({ token: authData.token, userid: authData.userid });
+    navigate('/', { replace: true });
   };
 
   return (
@@ -140,10 +151,41 @@ export default function Login() {
           </button>
         </div>
         
+        {/* 第三方登录入口 */}
+        <div className="login-third-party">
+          <div className="third-party-divider">
+            <span>其他登录方式</span>
+          </div>
+          <div className="third-party-buttons">
+            <button
+              onClick={() => setQrMode('qq')}
+              className="third-party-btn qq-btn"
+            >
+              <span className="third-party-icon qq-icon">Q</span>
+              QQ 登录
+            </button>
+            <button
+              onClick={() => setQrMode('wechat')}
+              className="third-party-btn wechat-btn"
+            >
+              <span className="third-party-icon wechat-icon">微</span>
+              微信登录
+            </button>
+          </div>
+        </div>
+
         <div className="login-footer">
           <p>登录即表示您同意我们的服务条款</p>
         </div>
       </div>
+
+      {/* 扫码登录弹窗 */}
+      <QrLoginModal
+        open={!!qrMode}
+        mode={qrMode}
+        onClose={() => setQrMode(null)}
+        onLogin={handleThirdLogin}
+      />
     </div>
   );
 };
