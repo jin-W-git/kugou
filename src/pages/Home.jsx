@@ -502,12 +502,29 @@ const Home = () => {
     const progressCallback = (progress, filename, loaded, total) => {
       updateProgress(hash, progress, filename, loaded, total);
     };
-    const result = await downloadSong(hash, filename, progressCallback);
-    // 完成后移除进度（延迟，让用户看到100%）
-    setTimeout(() => {
-      removeProgress(hash);
-    }, 1000);
-    return result.success;
+    // 失败自动重试（避开酷狗风控限流）：最多3次，等待时间递增
+    const MAX_ATTEMPTS = 3;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const result = await downloadSong(hash, filename, progressCallback);
+        // 完成后移除进度（延迟，让用户看到100%）
+        setTimeout(() => {
+          removeProgress(hash);
+        }, 1000);
+        return result.success;
+      } catch (error) {
+        const msg = String(error?.message || '');
+        // 仅对酷狗风控/占位假数据类错误重试；其他错误直接抛出
+        const isRisk = /验证|20028|本次请求需要|占位|假数据/.test(msg);
+        if (attempt < MAX_ATTEMPTS && isRisk) {
+          console.warn(`[批量下载] 第${attempt}次触发酷狗风控，${attempt * 4}秒后自动重试: ${song.OriSongName}`);
+          await new Promise((r) => setTimeout(r, attempt * 4000));
+          continue;
+        }
+        throw error;
+      }
+    }
+    return false;
   }, [updateProgress, removeProgress]);
 
   // 批量下载：带并发控制的下载队列
@@ -532,6 +549,8 @@ const Home = () => {
     const worker = async () => {
       while (queue.length > 0) {
         const song = queue.shift();
+        // 降频：每首间隔2.5秒，避免高频请求触发酷狗风控(20028)
+        await new Promise((r) => setTimeout(r, 2500));
         try {
           await downloadOne(song);
           completed++;
