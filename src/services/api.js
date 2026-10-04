@@ -138,12 +138,13 @@ export const downloadSong = async (hash, filename, onProgress) => {
       onProgress(0, finalFilename, 0, 0);
     }
     
-    // 使用axios下载文件
+    // 使用axios下载文件（经后端代理：浏览器无法设置酷狗UA/Referer，直接下载会拿到占位假数据）
+    const proxyUrl = `${import.meta.env.VITE_API_BASE_URL}/download/proxy?url=${encodeURIComponent(downloadUrl)}`;
     const response = await axios({
       method: 'GET',
-      url: downloadUrl,
+      url: proxyUrl,
       responseType: 'blob',
-      timeout: 60000, // 60秒超时
+      timeout: 120000, // 120秒超时（大文件）
       onDownloadProgress: (progressEvent) => {
         let percentCompleted = 0;
         const loaded = progressEvent.loaded || 0;
