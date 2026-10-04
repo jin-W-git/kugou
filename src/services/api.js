@@ -173,7 +173,16 @@ export const downloadSong = async (hash, filename, onProgress) => {
     if (onProgress) {
       onProgress(0, '');
     }
-    throw new Error(`下载失败: ${error.message}`);
+    const msg = String(error?.message || '');
+    // 酷狗风控验证（20028 / "本次请求需要验证"）：给出明确指引，而不是泛泛报错
+    if (/验证|20028|本次请求需要/.test(msg)) {
+      throw new Error(
+        '该歌曲触发酷狗滑块验证（付费/版权歌曲）。' +
+          '请打开验证页 http://localhost:3000/verifySlide.html，' +
+          '填入本次验证事件 ID 后手动完成一次滑块验证，再回来重试下载。'
+      );
+    }
+    throw new Error(`下载失败: ${msg}`);
   }
 };
 
