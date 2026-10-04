@@ -148,7 +148,9 @@ export const downloadSong = async (hash, filename, onProgress) => {
     
     // 清理资源
     setTimeout(() => {
-      document.body.removeChild(link);
+      if (document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
       window.URL.revokeObjectURL(url);
     }, 100);
     

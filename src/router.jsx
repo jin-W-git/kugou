@@ -6,12 +6,14 @@ import RootLayout from './components/RootLayout';
 import MainApp from './components/MainApp';
 import HomeWithSearch from './components/HomeWrapper';
 import Playlists from './pages/Playlists';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // 路由配置
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         element: <MainApp />,
