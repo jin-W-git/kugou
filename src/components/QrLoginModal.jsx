@@ -238,6 +238,8 @@ export default function QrLoginModal({ open, mode, onClose, onLogin }) {
             <img
               src={qrImage}
               alt="登录二维码"
+              onClick={handleManualRefresh}
+              title="点击刷新二维码"
               style={{
                 width: 220,
                 height: 220,
@@ -245,13 +247,17 @@ export default function QrLoginModal({ open, mode, onClose, onLogin }) {
                 borderRadius: 8,
                 background: '#fff',
                 padding: 8,
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
               }}
             />
             <p style={{ margin: '12px 0 0', color: '#666', fontSize: 13 }}>
               {msg}
             </p>
             <p style={{ margin: '6px 0 0', color: '#aaa', fontSize: 12 }}>
-              {expired ? '二维码已过期' : '二维码有效期约 2-5 分钟'}
+              {expired
+                ? '二维码已过期'
+                : '二维码有效期约 2-5 分钟 · 点击二维码即可刷新'}
             </p>
             {expired && (
               <Button type="primary" style={{ marginTop: 12 }} onClick={handleManualRefresh}>
