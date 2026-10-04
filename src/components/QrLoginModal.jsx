@@ -131,11 +131,14 @@ export default function QrLoginModal({ open, mode, onClose, onLogin }) {
       }
       try {
         const res = await wxLoginCheck(uuid);
+        // 微信 qrconnect 返回字段为 wx_errcode / wx_code
+        const wxe = res?.wx_errcode;
+        const code = res?.wx_code || res?.code;
 
         // 授权成功且返回授权码
-        if (res.code) {
+        if (code) {
           setMsg('已确认，正在登录...');
-          const openplat = await wxLoginOpenplat(res.code);
+          const openplat = await wxLoginOpenplat(code);
           if (openplat.status === 1 && openplat.data?.token) {
             await handleSuccess(openplat.data);
             return;
@@ -144,11 +147,13 @@ export default function QrLoginModal({ open, mode, onClose, onLogin }) {
           return;
         }
 
-        if (res.status === 'confirmed' && !res.code) {
-          setMsg('已扫码，正在获取授权...');
-        } else {
-          setMsg('请用微信扫描二维码');
+        // 二维码失效
+        if (wxe === 404 || wxe === 400) {
+          handleExpired();
+          return;
         }
+        // 408 = 等待扫码，其余继续等待
+        setMsg('请用微信扫描二维码');
       } catch (e) {
         console.error('微信轮询失败:', e);
         setMsg('轮询出错：' + (e?.message || ''));
