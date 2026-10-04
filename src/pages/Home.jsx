@@ -99,8 +99,7 @@ const SongItem = memo(({ song, albumImage, onPlay, onDownload, isLast, lastRef, 
             loading="lazy"
             decoding="async"
             onError={(e) => {
-              e.target.style.display = "none";
-              e.target.nextSibling.style.display = "flex";
+              e.currentTarget.style.display = "none";
             }}
           />
         ) : null}

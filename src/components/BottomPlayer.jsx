@@ -91,8 +91,7 @@ const BottomPlayer = memo(() => {
                   alt={currentSong.title}
                   className="album-cover-img"
                   onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
+                    e.currentTarget.style.display = 'none';
                   }}
                 />
               ) : null}

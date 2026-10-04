@@ -346,8 +346,7 @@ const Playlists = () => {
                         loading="lazy"
                         decoding="async"
                         onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
+                          e.currentTarget.style.display = "none";
                         }}
                       />
                     ) : null}
@@ -461,8 +460,7 @@ const Playlists = () => {
                         loading="lazy"
                         decoding="async"
                         onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
+                          e.currentTarget.style.display = "none";
                         }}
                       />
                     ) : null}

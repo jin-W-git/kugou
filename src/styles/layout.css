@@ -1059,6 +1059,7 @@
 /* 专辑封面样式 */
 .song-cover,
 .song-thumbnail {
+  position: relative;
   width: 50px;
   height: 50px;
   border-radius: 4px;
@@ -1087,6 +1088,12 @@
   font-size: 1.2rem;
   color: #888888;
   background-color: #333333;
+}
+
+/* 占位符绝对定位垫底：图片加载失败时只隐藏 img 自身即可露出，无需操作兄弟节点 */
+.album-cover-placeholder {
+  position: absolute;
+  inset: 0;
 }
 
 .song-info {
