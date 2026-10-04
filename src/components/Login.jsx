@@ -16,6 +16,15 @@ export default function Login() {
   const navigate = useNavigate();
   const { isAuthenticated, login } = useAuth();
 
+  // 登录态变为已认证后再跳转首页：
+  // 必须等 login() 内部的 setUser 完成（isAuthenticated=true）再跳，
+  // 否则 AppLayout 在 user 未写入前渲染会把用户弹回登录页
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
@@ -61,8 +70,8 @@ export default function Login() {
       setIsLoading(true);
       const res = await request(`/login/cellphone?mobile=${mobile}&code=${code}`);
       const data = res.data;
-      login(data);
-      navigate('/', { replace: true });
+      // 等待登录完成（setUser 写入），跳转由 isAuthenticated 的 useEffect 兜底
+      await login(data);
     } catch (error) {
       console.error('登录失败:', error);
       message.error('登录失败，请检查手机号和验证码');
@@ -71,13 +80,12 @@ export default function Login() {
     }
   };
 
-  // 第三方扫码登录成功后统一处理：存入 auth + 跳转首页
+  // 第三方扫码登录成功后统一处理：存入 auth，跳转由 isAuthenticated 的 useEffect 兜底
   const handleThirdLogin = async (authData) => {
     if (!authData?.token || authData.userid === undefined) {
       throw new Error('登录数据不完整');
     }
     await login({ token: authData.token, userid: authData.userid });
-    navigate('/', { replace: true });
   };
 
   return (
