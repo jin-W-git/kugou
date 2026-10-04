@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  music-downloader:
+    build: .
+    ports:
+      - "9990:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app-network
+    volumes:
+      - /home/docker-app/music-downloader/dist:/usr/share/nginx/html
+      - /home/docker-app/music-downloader/nginx.conf:/etc/nginx/nginx.conf
+
+networks:
+  app-network:
+    external: true
