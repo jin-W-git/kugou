@@ -162,8 +162,31 @@ export const downloadSong = async (hash, filename, onProgress) => {
       }
     });
     
-    // 创建文件对象
-    const blob = new Blob([response.data], {
+    // 下载后自检：酷狗对版权/付费歌返回"开头正常+主体全是空字节"的占位假数据，检测并拦截
+    const rawBuf = await response.data.arrayBuffer();
+    const bytes = new Uint8Array(rawBuf);
+    const totalLen = bytes.length;
+    const checkStart = Math.min(4096, totalLen);   // 跳过开头（可能是正常的 ID3/帧头）
+    const bodyLen = Math.max(0, totalLen - checkStart);
+    const maxSample = 200000;                      // 最多采样20万字节，避免大文件卡顿
+    const sampleLen = Math.min(bodyLen, maxSample);
+    const step = bodyLen > maxSample ? Math.floor(bodyLen / maxSample) : 1;
+    let zeroCnt = 0;
+    let sampleEnd = 0;
+    for (let i = checkStart; i < totalLen && sampleEnd < sampleLen; i += step, sampleEnd++) {
+      if (bytes[i] === 0) zeroCnt++;
+    }
+    const sampled = sampleEnd || 1;
+    const zeroRatio = zeroCnt / sampled;
+    if (zeroRatio > 0.9) {
+      throw new Error(
+        '下载到的音频是酷狗返回的占位假数据（该歌为版权/付费歌曲，未解锁）。' +
+          '请打开 http://localhost:3000/verifySlide.html 手动完成滑块验证后，再回来重新下载真实音频。'
+      );
+    }
+
+    // 用自检后的原始字节创建文件对象
+    const blob = new Blob([rawBuf], {
       type: response.headers['content-type'] || 'audio/mpeg'
     });
     
