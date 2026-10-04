@@ -98,10 +98,14 @@ export const downloadSong = async (hash, filename, onProgress) => {
     }
     
     const downloadUrl = songData.backupUrl[0];
-    const extension = songData.extName || 'mp3';
+    // 使用歌曲真实的音频格式作为扩展名（m4a/flac/mp3 等），避免把 m4a 存成 .mp3
+    const extension = (songData.extName || 'mp3').toLowerCase();
     
-    // 生成最终文件名
-    const finalFilename = filename || `歌曲_${Date.now()}.${extension}`;
+    // 生成最终文件名：若传入的 filename 扩展名与真实格式不符，替换为真实格式
+    let finalFilename = filename || `歌曲_${Date.now()}.${extension}`;
+    if (filename && !filename.toLowerCase().endsWith(`.${extension}`)) {
+      finalFilename = filename.replace(/\.[^.]+$/, `.${extension}`);
+    }
     
     // 初始化进度
     if (onProgress) {
@@ -174,12 +178,66 @@ export const downloadSong = async (hash, filename, onProgress) => {
 };
 
 // 获取用户创建及收藏的歌单列表（需登录）
-export const getUserPlaylists = (page = 1, pagesize = 50) =>
-  request(`/user/playlist?page=${page}&pagesize=${pagesize}`);
+// 注意：后端 user_playlist 模块用 POST（酷狗 /v7/get_all_list），且必须把 userid/token 放进请求体，
+// 仅靠 Cookie 会被酷狗拒绝（返回 20010 token 失效）
+export const getUserPlaylists = (page = 1, pagesize = 50) => {
+  let auth = {};
+  try {
+    auth = JSON.parse(localStorage.getItem('auth') || '{}');
+  } catch (e) {
+    auth = {};
+  }
+  const body = { page, pagesize };
+  if (auth.token) body.token = auth.token;
+  if (auth.userid) body.userid = auth.userid;
+  return request(`/user/playlist`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+};
 
-// 获取歌单内所有歌曲
-export const getPlaylistTracks = (id, page = 1, pagesize = 30) =>
-  request(`/playlist/track/all?id=${id}&page=${page}&pagesize=${pagesize}`);
+// 获取歌单内所有歌曲（需登录）
+// 注意：用户自己的云歌单必须用新版接口 /playlist/track/all/new（POST，listid + token/userid），
+// 旧接口 /playlist/track/all（get_other_list_file_nofilt）只支持公开歌单。
+// 新版接口返回的字段结构不同（hash/singerinfo/albuminfo/name），此处归一化为标准字段。
+const normalizeTrack = (raw) => {
+  const singer = raw?.singerinfo?.[0]?.name || raw?.singer || raw?.SingerName || '';
+  let songName =
+    (raw?.name || '').replace(/\.(mp3|flac|wav|aac|ogg|m4a|ape)$/i, '') ||
+    raw?.songname ||
+    '未知歌曲';
+  // name 形如 "歌手 - 歌名.mp3"，去掉歌手前缀
+  if (singer && songName.startsWith(`${singer} - `)) {
+    songName = songName.slice(singer.length + 3);
+  }
+  return {
+    ...raw,
+    FileHash: raw?.hash,
+    hash: raw?.hash,
+    OriSongName: songName,
+    SingerName: singer || '未知歌手',
+    AlbumName: raw?.albuminfo?.name || raw?.AlbumName || '',
+    AlbumID: raw?.album_id || raw?.AlbumID || '',
+  };
+};
+
+export const getPlaylistTracks = async (id, page = 1, pagesize = 30) => {
+  let auth = {};
+  try {
+    auth = JSON.parse(localStorage.getItem('auth') || '{}');
+  } catch (e) {
+    auth = {};
+  }
+  const body = { listid: id, page, pagesize, type: 0 };
+  if (auth.token) body.token = auth.token;
+  if (auth.userid) body.userid = auth.userid;
+  const res = await request(`/playlist/track/all/new`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  const rawLists = res?.data?.info || res?.data?.lists || [];
+  return { ...res, data: { ...(res?.data || {}), lists: rawLists.map(normalizeTrack) } };
+};
 
 // 搜索建议接口
 export const getSuggestions = (keywords) => {

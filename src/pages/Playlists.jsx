@@ -85,37 +85,7 @@ const Playlists = () => {
     }
   }, [isAuthenticated, view, loadPlaylists]);
 
-  // 获取歌单内歌曲
-  const openPlaylist = useCallback(async (pl) => {
-    const id = resolvePlaylistId(pl);
-    if (!id) {
-      message.error("歌单ID无效");
-      return;
-    }
-    const name = pl?.specialname || pl?.name || pl?.title || "我的歌单";
-    setView({ id, name });
-    setLoadingTracks(true);
-    setPlaylistSongs([]);
-    setSelectedHashes(new Set());
-    try {
-      const res = await getPlaylistTracks(id, 1, 100);
-      const lists = res?.data?.lists || [];
-      setPlaylistSongs(lists);
-      if (lists.length > 0) {
-        fetchAlbumImagesBatch(lists);
-      }
-      if (lists.length === 0) {
-        message.info("该歌单暂无歌曲");
-      }
-    } catch (error) {
-      console.error("获取歌单歌曲失败:", error);
-      message.error("获取歌单歌曲失败");
-    } finally {
-      setLoadingTracks(false);
-    }
-  }, [fetchAlbumImagesBatch]);
-
-  // 批量获取歌曲封面
+  // 批量获取歌曲封面（必须先于 openPlaylist 定义，否则触发 TDZ ReferenceError）
   const fetchAlbumImagesBatch = useCallback(async (songs) => {
     try {
       const CONCURRENT_LIMIT = 5;
@@ -161,6 +131,36 @@ const Playlists = () => {
       console.error("获取封面失败:", error);
     }
   }, []);
+
+  // 获取歌单内歌曲
+  const openPlaylist = useCallback(async (pl) => {
+    const id = resolvePlaylistId(pl);
+    if (!id) {
+      message.error("歌单ID无效");
+      return;
+    }
+    const name = pl?.specialname || pl?.name || pl?.title || "我的歌单";
+    setView({ id, name });
+    setLoadingTracks(true);
+    setPlaylistSongs([]);
+    setSelectedHashes(new Set());
+    try {
+      const res = await getPlaylistTracks(id, 1, 100);
+      const lists = res?.data?.lists || [];
+      setPlaylistSongs(lists);
+      if (lists.length > 0) {
+        fetchAlbumImagesBatch(lists);
+      }
+      if (lists.length === 0) {
+        message.info("该歌单暂无歌曲");
+      }
+    } catch (error) {
+      console.error("获取歌单歌曲失败:", error);
+      message.error("获取歌单歌曲失败");
+    } finally {
+      setLoadingTracks(false);
+    }
+  }, [fetchAlbumImagesBatch]);
 
   // 播放
   const handlePlaySong = useCallback(async (song) => {
