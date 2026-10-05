@@ -145,13 +145,32 @@ const Playlists = () => {
     setPlaylistSongs([]);
     setSelectedHashes(new Set());
     try {
-      const res = await getPlaylistTracks(id, 1, 100);
-      const lists = res?.data?.lists || [];
-      setPlaylistSongs(lists);
-      if (lists.length > 0) {
-        fetchAlbumImagesBatch(lists);
+      // 翻页循环取完歌单全部歌曲（每页100首），避免只加载第一页
+      let all = [];
+      let page = 1;
+      while (true) {
+        const res = await getPlaylistTracks(id, page, 100);
+        const lists = res?.data?.lists || [];
+        if (lists.length === 0) break;
+        all = [...all, ...lists];
+        if (lists.length < 100) break; // 最后一页
+        page++;
       }
-      if (lists.length === 0) {
+      // 按 hash 去重（酷狗分页可能返回重复项）
+      const seen = new Set();
+      const unique = all.filter((s) => {
+        const k = s?.FileHash || s?.hash;
+        if (k) {
+          if (seen.has(k)) return false;
+          seen.add(k);
+        }
+        return true;
+      });
+      setPlaylistSongs(unique);
+      if (unique.length > 0) {
+        fetchAlbumImagesBatch(unique);
+      }
+      if (unique.length === 0) {
         message.info("该歌单暂无歌曲");
       }
     } catch (error) {
