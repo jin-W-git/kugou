@@ -290,7 +290,9 @@ export const getPlaylistTracks = async (id, page = 1, pagesize = 30) => {
   const body = { listid: id, page, pagesize, type: 0 };
   if (auth.token) body.token = auth.token;
   if (auth.userid) body.userid = auth.userid;
-  const res = await request(`/playlist/track/all/new`, {
+  // 加随机参数绕过后端cache串扰：POST接口的缓存key不含请求体，不同歌单会命中同一缓存
+  const cb = `${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+  const res = await request(`/playlist/track/all/new?_cb=${cb}`, {
     method: 'POST',
     body: JSON.stringify(body),
   });
